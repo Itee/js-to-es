@@ -1,6 +1,6 @@
 {
   "name": "js-to-es",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "This package will try to convert given js files to es modules files.",
   "main": "builds/js-to-es.cjs.js",
   "directories": {
