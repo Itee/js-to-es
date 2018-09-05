@@ -109,7 +109,7 @@ function getFileForPath(value) {
   return fs.readFileSync(value, 'utf8');
 }
 function getUncommentedFileForPath(value) {
-  return getFileForPath(value).replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/g, '$1');
+  return getFileForPath(value).replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
 }
 function createFoldersTree(value) {
   value.split(path.sep).reduce(function (parentDir, childDir) {
@@ -227,8 +227,8 @@ function () {
 
           var jsFiles = JsToEs._filterJavascriptFiles(availableFilesPaths);
 
-          this._fileMap = JsToEs._createFilesMap(namespace, regex, availableFilesPaths, edgeCases, output);
-          this._exportMap = JsToEs._createExportMap(jsFiles, namespace, regex, edgeCases, output);
+          this._fileMap = JsToEs._createFilesMap(namespace, regex, availableFilesPaths, edgeCases, inputs, output);
+          this._exportMap = JsToEs._createExportMap(jsFiles, namespace, regex, edgeCases, inputs, output);
 
           JsToEs._processFiles(this._fileMap, this._exportMap, banner);
 
@@ -245,8 +245,8 @@ function () {
 
             var _jsFiles = JsToEs._filterJavascriptFiles(_availableFilesPaths);
 
-            _this._fileMap = JsToEs._createFilesMap(namespace, regex, _availableFilesPaths, edgeCases, output);
-            _this._exportMap = JsToEs._createExportMap(_jsFiles, namespace, regex, edgeCases, output);
+            _this._fileMap = JsToEs._createFilesMap(namespace, regex, _availableFilesPaths, edgeCases, inputs, output);
+            _this._exportMap = JsToEs._createExportMap(_jsFiles, namespace, regex, edgeCases, inputs, output);
 
             JsToEs._processFiles(_this._fileMap, _this._exportMap, banner);
 
@@ -1088,34 +1088,43 @@ function () {
     }
   }, {
     key: "_getOutputFor",
-    value: function _getOutputFor(filePath, outputBasePath, edgeCase) {
+    value: function _getOutputFor(filePath, inputs, outputBasePath, edgeCase) {
       if (edgeCase.outputOverride) {
         return path.join(outputBasePath, edgeCase.outputOverride);
       }
 
-      var specificPath = JsToEs._getSpecificPath(outputBasePath, filePath);
+      var specificPath = JsToEs._getSpecificPath(inputs, outputBasePath, filePath);
 
       var outputPath = path.join(outputBasePath, specificPath);
       return outputPath;
     }
   }, {
     key: "_getSpecificPath",
-    value: function _getSpecificPath(base, target) {
-      var baseSplits = base.split(path.sep);
+    value: function _getSpecificPath(baseInputs, baseOutput, target) {
       var targetSplits = target.split(path.sep);
-      var index = 0;
+      var indexMax = 0;
 
-      while (baseSplits[index] === targetSplits[index]) {
+      for (var i = 0, numInputs = baseInputs.length; i < numInputs; i++) {
+        var baseinputSplits = baseInputs[i].split(path.sep);
+        var index = 0;
+
+        while (baseinputSplits[index] === targetSplits[index]) {
+          index++;
+        }
+
         index++;
+
+        if (index > indexMax) {
+          indexMax = index;
+        }
       }
 
-      index++;
-      var specificPath = targetSplits.slice(index).join(path.sep);
+      var specificPath = targetSplits.slice(indexMax).join(path.sep);
       return specificPath;
     }
   }, {
     key: "_createFilesMap",
-    value: function _createFilesMap(namespace, regex, filesPaths, edgeCases, outputBasePath) {
+    value: function _createFilesMap(namespace, regex, filesPaths, edgeCases, inputs, outputBasePath) {
       var filesMap = {};
       filesPaths.forEach(function (filePath) {
         var fileExtension = path.extname(filePath);
@@ -1139,7 +1148,7 @@ function () {
 
           var replacements = JsToEs._getReplacementsFor(namespace, file, exports, edgeCase);
 
-          var output = JsToEs._getOutputFor(filePath, outputBasePath, edgeCase);
+          var output = JsToEs._getOutputFor(filePath, inputs, outputBasePath, edgeCase);
 
           filesMap[baseName] = {
             isJavascript: isJavascript,
@@ -1151,7 +1160,7 @@ function () {
             output: output
           };
         } else {
-          var _output = JsToEs._getOutputFor(filePath, outputBasePath, edgeCase);
+          var _output = JsToEs._getOutputFor(filePath, inputs, outputBasePath, edgeCase);
 
           filesMap[baseName] = {
             isJavascript: isJavascript,
@@ -1164,7 +1173,7 @@ function () {
     }
   }, {
     key: "_createExportMap",
-    value: function _createExportMap(filesPaths, namespace, regex, edgeCases, outputBasePath) {
+    value: function _createExportMap(filesPaths, namespace, regex, edgeCases, inputs, outputBasePath) {
       var exportsMap = {};
       filesPaths.forEach(function (filePath) {
         var fileExtension = path.extname(filePath);
@@ -1176,7 +1185,7 @@ function () {
 
         var exports = JsToEs._getExportsFor(namespace, fileType, file, baseName, edgeCase);
 
-        var outputPath = JsToEs._getOutputFor(filePath, outputBasePath, edgeCase);
+        var outputPath = JsToEs._getOutputFor(filePath, inputs, outputBasePath, edgeCase);
 
         exports.forEach(function (exportedElement) {
           // Check case where export is an array with 'from' or 'as'
@@ -1232,4 +1241,3 @@ _defineProperty(JsToEs, "JavascriptType", Object.freeze({
 }));
 
 exports.JsToEs = JsToEs;
-//# sourceMappingURL=js-to-es.cjs.js.map
