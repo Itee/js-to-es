@@ -3,7 +3,6 @@
   "version": "2.0.0",
   "description": "This package will try to convert given js files to es modules files.",
   "main": "builds/js-to-es.cjs.js",
-  "module": "builds/js-to-es.es.js",
   "directories": {
     "test": "tests"
   },
