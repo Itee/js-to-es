@@ -150,7 +150,7 @@ function () {
     this.output = options.output || '';
     this.edgeCases = options.edgeCases || [];
     this.banner = options.banner || '';
-    this.global = options.global || ''; // Private
+    this.namespace = options.namespace || ''; // Private
 
     this._exportMap = {};
     this._fileMap = {};
@@ -158,9 +158,9 @@ function () {
       'AMD': new RegExp(/define\.amd/g),
       'CJS': new RegExp(/module\.exports\s*=\s*\{?[^}]*}?/g),
       'UMD': new RegExp(/\(function\s*\(root,\s*factory\)\s*\{/g),
-      'Classic': new RegExp("(".concat(this._global, ".(\\w+)\\s*=\\s*)+\\s*function"), 'g'),
-      'Prototype': new RegExp("prototype\\.constructor\\s?=\\s?(".concat(this._global, "\\.)?(\\w)+"), 'g'),
-      'Library': new RegExp("".concat(this._global, ".(\\w+) = \\{")),
+      'Classic': new RegExp("(".concat(this._namespace, ".(\\w+)\\s*=\\s*)+\\s*function"), 'g'),
+      'Prototype': new RegExp("prototype\\.constructor\\s?=\\s?(".concat(this._namespace, "\\.)?(\\w)+"), 'g'),
+      'Library': new RegExp("".concat(this._namespace, ".(\\w+) = \\{")),
       'Es6': new RegExp(/(export\s(default|var))|((import|export)[\r\n\s]*(default)?({[\w\s,]+}\s?(from)?))/, 'g')
     };
   }
@@ -197,9 +197,9 @@ function () {
       return this;
     }
   }, {
-    key: "setGlobal",
-    value: function setGlobal(value) {
-      this.global = value;
+    key: "setNamespace",
+    value: function setNamespace(value) {
+      this.namespace = value;
       return this;
     }
   }, {
@@ -212,7 +212,7 @@ function () {
       var output = this._output;
       var edgeCases = this._edgeCases;
       var banner = this._banner;
-      var global = this._global;
+      var namespace = this._namespace;
       var regex = this._regex;
 
       if (callback) {
@@ -223,8 +223,8 @@ function () {
 
           var jsFiles = JsToEs._filterJavascriptFiles(availableFilesPaths);
 
-          this._fileMap = JsToEs._createFilesMap(global, regex, availableFilesPaths, edgeCases, output);
-          this._exportMap = JsToEs._createExportMap(jsFiles, regex, edgeCases, output);
+          this._fileMap = JsToEs._createFilesMap(namespace, regex, availableFilesPaths, edgeCases, output);
+          this._exportMap = JsToEs._createExportMap(jsFiles, namespace, regex, edgeCases, output);
 
           JsToEs._processFiles(this._fileMap, this._exportMap, banner);
 
@@ -241,8 +241,8 @@ function () {
 
             var _jsFiles = JsToEs._filterJavascriptFiles(_availableFilesPaths);
 
-            _this._fileMap = JsToEs._createFilesMap(global, regex, _availableFilesPaths, edgeCases, output);
-            _this._exportMap = JsToEs._createExportMap(_jsFiles, regex, edgeCases, output);
+            _this._fileMap = JsToEs._createFilesMap(namespace, regex, _availableFilesPaths, edgeCases, output);
+            _this._exportMap = JsToEs._createExportMap(_jsFiles, namespace, regex, edgeCases, output);
 
             JsToEs._processFiles(_this._fileMap, _this._exportMap, banner);
 
@@ -319,25 +319,25 @@ function () {
       this._banner = value;
     }
   }, {
-    key: "global",
+    key: "namespace",
     get: function get() {
-      return this._banner;
+      return this._namespace;
     },
     set: function set(value) {
       if (isNotString(value)) {
-        throw new TypeError('Invalid global argument, expect a string.');
-      } // global will be used in regex so escape it
+        throw new TypeError('Invalid namespace argument, expect a string.');
+      } // namespace will be used in regex so escape it
       // https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
 
 
-      this._global = value.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      this._namespace = value.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       this._regex = {
         'AMD': new RegExp(/define\.amd/g),
         'CJS': new RegExp(/module\.exports\s*=\s*\{?[^}]*}?/g),
         'UMD': new RegExp(/\(function\s*\(root,\s*factory\)\s*\{/g),
-        'Classic': new RegExp("(".concat(this._global, ".(\\w+)\\s*=\\s*)+\\s*function"), 'g'),
-        'Prototype': new RegExp("prototype\\.constructor\\s?=\\s?(".concat(this._global, "\\.)?(\\w)+"), 'g'),
-        'Library': new RegExp("".concat(this._global, ".(\\w+) = \\{")),
+        'Classic': new RegExp("(".concat(this._namespace, ".(\\w+)\\s*=\\s*)+\\s*function"), 'g'),
+        'Prototype': new RegExp("prototype\\.constructor\\s?=\\s?(".concat(this._namespace, "\\.)?(\\w)+"), 'g'),
+        'Library': new RegExp("".concat(this._namespace, ".(\\w+) = \\{")),
         'Es6': new RegExp(/(export\s(default|var))|((import|export)[\r\n\s]*(default)?({[\w\s,]+}\s?(from)?))/, 'g')
       };
     }
@@ -564,7 +564,7 @@ function () {
     }
   }, {
     key: "_getAllImportsStatementIn",
-    value: function _getAllImportsStatementIn(global, file, exports) {
+    value: function _getAllImportsStatementIn(namespace, file, exports) {
       var statements = [];
       var matchs = file.match(/import\s+(?:(?:({[\w\s,]+})|([\w,*-]+))\s+)+from/g) || [];
       matchs.filter(makeUnique).forEach(function (value) {
@@ -592,14 +592,14 @@ function () {
     }
   }, {
     key: "_getAllExtendsStatementIn",
-    value: function _getAllExtendsStatementIn(global, file, exports) {
+    value: function _getAllExtendsStatementIn(namespace, file, exports) {
       var statements = []; // By Object.assign
 
-      var fileRegex = new RegExp("Object\\.assign\\(\\s*((".concat(global, ".)?(\\w+)\\.prototype[,]*\\s*){2,}"), 'g');
-      var globalRegex = new RegExp("".concat(global, "\\."), 'g');
+      var fileRegex = new RegExp("Object\\.assign\\(\\s*((".concat(namespace, ".)?(\\w+)\\.prototype[,]*\\s*){2,}"), 'g');
+      var namespaceRegex = new RegExp("".concat(namespace, "\\."), 'g');
       var matchs = file.match(fileRegex) || [];
       matchs.filter(makeUnique).forEach(function (value) {
-        var results = value.replace(/Object\.assign\(\s+/g, '').replace(globalRegex, '').replace(/\.prototype/g, '').replace(/\s+/g, '').split(','); // Check if the extends statement is not about the exported object !
+        var results = value.replace(/Object\.assign\(\s+/g, '').replace(namespaceRegex, '').replace(/\.prototype/g, '').replace(/\s+/g, '').split(','); // Check if the extends statement is not about the exported object !
 
         var result = undefined;
 
@@ -619,13 +619,13 @@ function () {
     }
   }, {
     key: "_getAllInheritStatementsIn",
-    value: function _getAllInheritStatementsIn(global, file, exports) {
+    value: function _getAllInheritStatementsIn(namespace, file, exports) {
       var statements = [];
-      var fileRegex = new RegExp("Object\\.create\\(\\s+((".concat(global, ".)?(\\w+)\\.prototype[,]?\\s*)+\\)"), 'g');
-      var globalRegex = new RegExp("Object\\.create\\(\\s+(".concat(global, ".)?"), 'g');
+      var fileRegex = new RegExp("Object\\.create\\(\\s+((".concat(namespace, ".)?(\\w+)\\.prototype[,]?\\s*)+\\)"), 'g');
+      var namespaceRegex = new RegExp("Object\\.create\\(\\s+(".concat(namespace, ".)?"), 'g');
       var matchs = file.match(fileRegex) || [];
       matchs.filter(makeUnique).forEach(function (value) {
-        var results = value.replace(globalRegex, '').replace(/\.prototype/g, '').replace(/\)/g, '').replace(/\s+/g, '').split(','); // Check if the inherit statement is not about the exported object !
+        var results = value.replace(namespaceRegex, '').replace(/\.prototype/g, '').replace(/\)/g, '').replace(/\s+/g, '').split(','); // Check if the inherit statement is not about the exported object !
 
         var result = undefined;
 
@@ -645,13 +645,13 @@ function () {
     }
   }, {
     key: "_getAllNewStatementIn",
-    value: function _getAllNewStatementIn(global, file, exports) {
+    value: function _getAllNewStatementIn(namespace, file, exports) {
       var statements = [];
-      var fileRegex = new RegExp("new\\s".concat(global, ".(\\w+)\\s?"), 'g');
-      var globalRegex = new RegExp("new\\s".concat(global, "\\."), 'g');
+      var fileRegex = new RegExp("new\\s".concat(namespace, ".(\\w+)\\s?"), 'g');
+      var namespaceRegex = new RegExp("new\\s".concat(namespace, "\\."), 'g');
       var matchs = file.match(fileRegex) || [];
       matchs.filter(makeUnique).forEach(function (value) {
-        var result = value.replace(globalRegex, '').replace(/\s+/g, ''); // Check if the new statement is not about the exported object !
+        var result = value.replace(namespaceRegex, '').replace(/\s+/g, ''); // Check if the new statement is not about the exported object !
 
         if (exports.includes(result)) {
           return;
@@ -665,13 +665,13 @@ function () {
     }
   }, {
     key: "_getAllInstanceOfStatementIn",
-    value: function _getAllInstanceOfStatementIn(global, file, exports) {
+    value: function _getAllInstanceOfStatementIn(namespace, file, exports) {
       var statements = [];
-      var fileRegex = new RegExp("instanceof\\s".concat(global, ".(\\w+)\\s?"), 'g');
-      var globalRegex = new RegExp("instanceof\\s".concat(global, "\\."), 'g');
+      var fileRegex = new RegExp("instanceof\\s".concat(namespace, ".(\\w+)\\s?"), 'g');
+      var namespaceRegex = new RegExp("instanceof\\s".concat(namespace, "\\."), 'g');
       var matchs = file.match(fileRegex) || [];
       matchs.filter(makeUnique).forEach(function (value) {
-        var result = value.replace(globalRegex, '').replace(/\s+/g, ''); // Check if the new statement is not about the exported object !
+        var result = value.replace(namespaceRegex, '').replace(/\s+/g, ''); // Check if the new statement is not about the exported object !
 
         if (exports.includes(result)) {
           return;
@@ -685,17 +685,17 @@ function () {
     }
   }, {
     key: "_getImportsFor",
-    value: function _getImportsFor(global, file, exports, edgeCase) {
+    value: function _getImportsFor(namespace, file, exports, edgeCase) {
       if (edgeCase.importsOverride) {
         return edgeCase.importsOverride;
       }
 
       var imports = [];
-      Array.prototype.push.apply(imports, JsToEs._getAllImportsStatementIn(global, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllInheritStatementsIn(global, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllExtendsStatementIn(global, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllNewStatementIn(global, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllInstanceOfStatementIn(global, file, exports));
+      Array.prototype.push.apply(imports, JsToEs._getAllImportsStatementIn(namespace, file, exports));
+      Array.prototype.push.apply(imports, JsToEs._getAllInheritStatementsIn(namespace, file, exports));
+      Array.prototype.push.apply(imports, JsToEs._getAllExtendsStatementIn(namespace, file, exports));
+      Array.prototype.push.apply(imports, JsToEs._getAllNewStatementIn(namespace, file, exports));
+      Array.prototype.push.apply(imports, JsToEs._getAllInstanceOfStatementIn(namespace, file, exports));
 
       if (edgeCase.imports) {
         Array.prototype.push.apply(imports, edgeCase.imports);
@@ -770,7 +770,7 @@ function () {
     }
   }, {
     key: "_getEs6ReplacementsFor",
-    value: function _getEs6ReplacementsFor(global) {
+    value: function _getEs6ReplacementsFor(namespace) {
       var replacements = [];
       replacements.push([/import\s+(?:(?:({[\w\s,]+})|([\w,*-]+))\s+)+from.+/g, '']);
       replacements.push([/export var/g, 'var']);
@@ -780,12 +780,12 @@ function () {
     }
   }, {
     key: "_getExportsReplacementsFor",
-    value: function _getExportsReplacementsFor(global, exports) {
+    value: function _getExportsReplacementsFor(namespace, exports) {
       var replacements = [];
 
       for (var i = 0, numberOfExports = exports.length; i < numberOfExports; i++) {
         var exportedObject = exports[i];
-        var regex2 = new RegExp("".concat(global, ".").concat(exportedObject, " ="), 'g');
+        var regex2 = new RegExp("".concat(namespace, ".").concat(exportedObject, " ="), 'g');
         var replacement2 = "var ".concat(exportedObject, " =");
         replacements.push([regex2, replacement2]);
         var regex1 = new RegExp(' = var ', 'g');
@@ -797,7 +797,7 @@ function () {
     }
   }, {
     key: "_getIifeReplacementsFor",
-    value: function _getIifeReplacementsFor(global, file) {
+    value: function _getIifeReplacementsFor(namespace, file) {
       var unspacedFile = file.replace(/\s+/g, '');
       var replacements = []; // Check if this iife is a main englobing function or inner function
 
@@ -821,30 +821,30 @@ function () {
       return replacements;
     }
   }, {
-    key: "_getGlobalReplacementsFor",
-    value: function _getGlobalReplacementsFor(global) {
-      var regex1 = new RegExp("".concat(global, "\\.Math\\."), 'g');
-      var regex2 = new RegExp("".concat(global, "."), 'g');
+    key: "_getNamespaceReplacementsFor",
+    value: function _getNamespaceReplacementsFor(namespace) {
+      var regex1 = new RegExp("".concat(namespace, "\\.Math\\."), 'g');
+      var regex2 = new RegExp("".concat(namespace, "."), 'g');
       return [[regex1, '_Math.'], [regex2, '']];
     }
   }, {
     key: "_getAutoAssignementReplacementsFor",
-    value: function _getAutoAssignementReplacementsFor(global) {
+    value: function _getAutoAssignementReplacementsFor(namespace) {
       return [[/var\s?(\w+)\s?=\s?\1;/g, '']];
     }
   }, {
     key: "_getReplacementsFor",
-    value: function _getReplacementsFor(global, file, exports, edgeCase) {
+    value: function _getReplacementsFor(namespace, file, exports, edgeCase) {
       if (edgeCase.replacementsOverride) {
         return edgeCase.replacementsOverride;
       }
 
       var replacements = [];
-      Array.prototype.push.apply(replacements, JsToEs._getEs6ReplacementsFor(global));
-      Array.prototype.push.apply(replacements, JsToEs._getExportsReplacementsFor(global, exports));
-      Array.prototype.push.apply(replacements, JsToEs._getIifeReplacementsFor(global, file));
-      Array.prototype.push.apply(replacements, JsToEs._getGlobalReplacementsFor(global));
-      Array.prototype.push.apply(replacements, JsToEs._getAutoAssignementReplacementsFor(global));
+      Array.prototype.push.apply(replacements, JsToEs._getEs6ReplacementsFor(namespace));
+      Array.prototype.push.apply(replacements, JsToEs._getExportsReplacementsFor(namespace, exports));
+      Array.prototype.push.apply(replacements, JsToEs._getIifeReplacementsFor(namespace, file));
+      Array.prototype.push.apply(replacements, JsToEs._getNamespaceReplacementsFor(namespace));
+      Array.prototype.push.apply(replacements, JsToEs._getAutoAssignementReplacementsFor(namespace));
 
       if (edgeCase.replacements) {
         Array.prototype.push.apply(replacements, edgeCase.replacements);
@@ -866,7 +866,7 @@ function () {
     }
   }, {
     key: "_getExportsStatementsInES6File",
-    value: function _getExportsStatementsInES6File(global, file) {
+    value: function _getExportsStatementsInES6File(namespace, file) {
       var exportedElements = []; // Todo: May be it should be splitted by export type... direct, named, default, as etc...
 
       var es6MatchedExports = file.match(/export(?:[^s]|)(?:(?:\s*{([\w\s,]+)}\s*)(?:(?:from)?\s?['"]([./]+[\w.]+['"]);?)?|(var\s+.+))/g);
@@ -905,13 +905,13 @@ function () {
     }
   }, {
     key: "_getExportsStatementsInAMDFile",
-    value: function _getExportsStatementsInAMDFile(global, file) {
+    value: function _getExportsStatementsInAMDFile(namespace, file) {
       console.error("WARNING: File is unable to be process... It is an AMD module. Sorry for the disagreement.");
       return [];
     }
   }, {
     key: "_getExportsStatementsInCJSFile",
-    value: function _getExportsStatementsInCJSFile(global, file) {
+    value: function _getExportsStatementsInCJSFile(namespace, file) {
       var exportedElements = [];
       var fileRegex = new RegExp(/module\.exports\s*=\s*\{?[^}]*}?/g);
       var commonjsExports = file.match(fileRegex);
@@ -928,16 +928,16 @@ function () {
     }
   }, {
     key: "_getExportsStatementsInClassicFile",
-    value: function _getExportsStatementsInClassicFile(global, file) {
+    value: function _getExportsStatementsInClassicFile(namespace, file) {
       var exportedElements = [];
-      var fileRegex = new RegExp("(".concat(global, ".(\\w+)\\s*=\\s*)+\\s*function"), 'g');
-      var globalRegex = new RegExp("".concat(global, "\\.|\\s*=\\s*function"), 'g');
+      var fileRegex = new RegExp("(".concat(namespace, ".(\\w+)\\s*=\\s*)+\\s*function"), 'g');
+      var namespaceRegex = new RegExp("".concat(namespace, "\\.|\\s*=\\s*function"), 'g');
       var potentialClassicObjectExports = file.match(fileRegex);
 
       if (potentialClassicObjectExports) {
         // Clean
         potentialClassicObjectExports.forEach(function (value) {
-          var results = value.replace(globalRegex, '').replace(/\s*/g, '').split('=');
+          var results = value.replace(namespaceRegex, '').replace(/\s*/g, '').split('=');
           Array.prototype.push.apply(exportedElements, results);
         });
       }
@@ -946,16 +946,16 @@ function () {
     }
   }, {
     key: "_getExportsStatementsInPrototypedFile",
-    value: function _getExportsStatementsInPrototypedFile(global, file) {
+    value: function _getExportsStatementsInPrototypedFile(namespace, file) {
       var exportedElements = [];
-      var fileRegex = new RegExp("prototype\\.constructor\\s?=\\s?(".concat(global, "\\.)?(\\w)+"), 'g');
-      var globalRegex = new RegExp("".concat(global, "\\."), 'g');
+      var fileRegex = new RegExp("prototype\\.constructor\\s?=\\s?(".concat(namespace, "\\.)?(\\w)+"), 'g');
+      var namespaceRegex = new RegExp("".concat(namespace, "\\."), 'g');
       var potentialPrototypedObjectExports = file.match(fileRegex);
 
       if (potentialPrototypedObjectExports) {
         // Clean
         potentialPrototypedObjectExports.forEach(function (value) {
-          var result = value.replace(/prototype\.constructor\s?=\s?/g, '').replace(globalRegex, '');
+          var result = value.replace(/prototype\.constructor\s?=\s?/g, '').replace(namespaceRegex, '');
           exportedElements.push(result);
         });
       }
@@ -964,16 +964,16 @@ function () {
     }
   }, {
     key: "_getExportsStatementInLibraryFile",
-    value: function _getExportsStatementInLibraryFile(global, file) {
+    value: function _getExportsStatementInLibraryFile(namespace, file) {
       var exportedElements = [];
-      var fileRegex = new RegExp("".concat(global, ".(\\w+) = \\{"), 'g');
-      var globalRegex = new RegExp("".concat(global, "\\.| = \\{"), 'g');
+      var fileRegex = new RegExp("".concat(namespace, ".(\\w+) = \\{"), 'g');
+      var namespaceRegex = new RegExp("".concat(namespace, "\\.| = \\{"), 'g');
       var potentialLibExports = file.match(fileRegex);
 
       if (potentialLibExports) {
         // Clean
         potentialLibExports.forEach(function (value) {
-          var result = value.replace(globalRegex, '');
+          var result = value.replace(namespaceRegex, '');
           exportedElements.push(result);
         });
       }
@@ -982,7 +982,7 @@ function () {
     }
   }, {
     key: "_getExportsFor",
-    value: function _getExportsFor(global, fileType, file, baseName, edgeCase) {
+    value: function _getExportsFor(namespace, fileType, file, baseName, edgeCase) {
       if (edgeCase.exportsOverride) {
         return edgeCase.exportsOverride;
       }
@@ -991,42 +991,38 @@ function () {
 
       switch (fileType) {
         case JsToEs.JavascriptType.AMD:
-          exports = JsToEs._getExportsStatementsInAMDFile(global, file);
+          exports = JsToEs._getExportsStatementsInAMDFile(namespace, file);
           break;
 
         case JsToEs.JavascriptType.CJS:
-          exports = JsToEs._getExportsStatementsInCJSFile(global, file);
+          exports = JsToEs._getExportsStatementsInCJSFile(namespace, file);
           break;
 
         case JsToEs.JavascriptType.Classic:
-          exports = JsToEs._getExportsStatementsInClassicFile(global, file);
+          exports = JsToEs._getExportsStatementsInClassicFile(namespace, file);
           break;
 
         case JsToEs.JavascriptType.Es6:
-          exports = JsToEs._getExportsStatementsInES6File(global, file);
+          exports = JsToEs._getExportsStatementsInES6File(namespace, file);
           break;
 
         case JsToEs.JavascriptType.Library:
-          exports = JsToEs._getExportsStatementInLibraryFile(global, file);
+          exports = JsToEs._getExportsStatementInLibraryFile(namespace, file);
           break;
 
         case JsToEs.JavascriptType.Prototype:
-          exports = JsToEs._getExportsStatementsInPrototypedFile(global, file);
+          exports = JsToEs._getExportsStatementsInPrototypedFile(namespace, file);
           break;
 
         case JsToEs.JavascriptType.UMD:
         case JsToEs.JavascriptType.Unknown:
+          console.error("WARNING: ".concat(baseName, " does not contains explicit or implicit export, fallback to file name as export..."));
           exports = [baseName];
           break;
 
         default:
           throw new RangeError("Invalid switch parameter: ".concat(fileType));
           break;
-      }
-
-      if (exports.length === 0) {
-        console.error("WARNING: ".concat(baseName, " does not contains explicit or implicit export, fallback to file name as export..."));
-        exports = [baseName];
       }
 
       if (edgeCase.exports) {
@@ -1112,43 +1108,10 @@ function () {
       index++;
       var specificPath = targetSplits.slice(index).join(sep);
       return specificPath;
-    } //    static _getSpecificPath_old ( path ) {
-    //
-    //        const exampleFontsTarget = 'three\\examples\\fonts'
-    //        const exampleJsTarget    = 'three\\examples\\js'
-    //        const sourceTarget       = 'three\\src'
-    //
-    //        let indexOfExampleFontsTarget = path.indexOf( exampleFontsTarget )
-    //        let indexOfExampleJsTarget    = path.indexOf( exampleJsTarget )
-    //        let indexOfSourceTarget       = path.indexOf( sourceTarget )
-    //        let specificPath              = undefined
-    //
-    //        if ( indexOfExampleFontsTarget > -1 ) {
-    //
-    //            specificPath = 'fonts\\' + path.slice( indexOfExampleFontsTarget + exampleFontsTarget.length )
-    //
-    //        } else if ( indexOfExampleJsTarget > -1 ) {
-    //
-    //            specificPath = path.slice( indexOfExampleJsTarget + exampleJsTarget.length )
-    //
-    //        } else if ( indexOfSourceTarget > -1 ) {
-    //
-    //            specificPath = path.slice( indexOfSourceTarget + sourceTarget.length )
-    //
-    //        } else {
-    //
-    //            console.error( `WARNING: Unable to find specific path part for: ${path}` )
-    //            specificPath = ''
-    //
-    //        }
-    //
-    //        return specificPath.replace( /\\/g, '/' )
-    //
-    //    }
-
+    }
   }, {
     key: "_createFilesMap",
-    value: function _createFilesMap(global, regex, filesPaths, edgeCases, outputBasePath) {
+    value: function _createFilesMap(namespace, regex, filesPaths, edgeCases, outputBasePath) {
       var filesMap = {};
       filesPaths.forEach(function (filePath) {
         var fileExtension = extname(filePath);
@@ -1166,11 +1129,11 @@ function () {
         if (isJavascript) {
           var fileType = JsToEs._getFileType(file, regex);
 
-          var exports = JsToEs._getExportsFor(global, fileType, file, baseName, edgeCase);
+          var exports = JsToEs._getExportsFor(namespace, fileType, file, baseName, edgeCase);
 
-          var imports = JsToEs._getImportsFor(global, file, exports, edgeCase);
+          var imports = JsToEs._getImportsFor(namespace, file, exports, edgeCase);
 
-          var replacements = JsToEs._getReplacementsFor(global, file, exports, edgeCase);
+          var replacements = JsToEs._getReplacementsFor(namespace, file, exports, edgeCase);
 
           var output = JsToEs._getOutputFor(filePath, outputBasePath, edgeCase);
 
@@ -1197,7 +1160,7 @@ function () {
     }
   }, {
     key: "_createExportMap",
-    value: function _createExportMap(filesPaths, regex, edgeCases, outputBasePath) {
+    value: function _createExportMap(filesPaths, namespace, regex, edgeCases, outputBasePath) {
       var exportsMap = {};
       filesPaths.forEach(function (filePath) {
         var fileExtension = extname(filePath);
@@ -1207,7 +1170,7 @@ function () {
 
         var fileType = JsToEs._getFileType(file, regex);
 
-        var exports = JsToEs._getExportsFor(global, fileType, file, baseName, edgeCase);
+        var exports = JsToEs._getExportsFor(namespace, fileType, file, baseName, edgeCase);
 
         var outputPath = JsToEs._getOutputFor(filePath, outputBasePath, edgeCase);
 
