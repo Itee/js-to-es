@@ -63,4 +63,6 @@ typings/
 .next
 
 .idea
-/tests/outputs/
+gulpfile.js
+/tests/
+/configs/
