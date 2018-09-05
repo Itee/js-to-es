@@ -1112,8 +1112,6 @@ function () {
           index++;
         }
 
-        index++;
-
         if (index > indexMax) {
           indexMax = index;
         }
