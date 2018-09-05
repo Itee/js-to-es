@@ -1137,7 +1137,6 @@ class JsToEs {
             while ( baseinputSplits[ index ] === targetSplits[ index ] ) {
                 index++
             }
-            index++
 
             if ( index > indexMax ) {
                 indexMax = index
