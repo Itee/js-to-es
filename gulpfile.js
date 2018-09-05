@@ -101,8 +101,8 @@ gulp.task( 'build', ( done ) => {
             inputPath:    path.join( __dirname, 'sources' ),
             outputPath:   path.join( __dirname, 'builds' ),
             environments: [ 'development', 'production' ],
-            formats:      [ 'cjs', 'es' ],
-            sourceMap:    true
+            formats:      [ 'cjs' ],
+            sourceMap:    false
         }
 
         const argv = processArgv.slice( 3 ) // Ignore nodejs, script paths and gulp params
