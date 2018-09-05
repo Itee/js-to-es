@@ -14,7 +14,7 @@ const JsToEs = require( '../builds/js-to-es.cjs' ).JsToEs
 const converter = new JsToEs()
 converter.setInputs( path.join( __dirname, 'inputs' ) )
          .setOutput( path.join( __dirname, 'outputs' ) )
-         .setGlobal( 'THREE' )
+         .setNamespace( 'THREE' )
          .convert()
          .then( () => console.log( 'Success !' ) )
          .catch( error => console.log( error ) )
