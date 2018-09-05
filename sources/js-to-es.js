@@ -60,7 +60,7 @@ class JsToEs {
         this.output    = options.output || ''
         this.edgeCases = options.edgeCases || []
         this.banner    = options.banner || ''
-        this.global    = options.global || ''
+        this.namespace    = options.namespace || ''
 
         // Private
         this._exportMap = {}
@@ -69,9 +69,9 @@ class JsToEs {
             'AMD':       new RegExp( /define\.amd/g ),
             'CJS':       new RegExp( /module\.exports\s*=\s*\{?[^}]*}?/g ),
             'UMD':       new RegExp( /\(function\s*\(root,\s*factory\)\s*\{/g ),
-            'Classic':   new RegExp( `(${this._global}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' ),
-            'Prototype': new RegExp( `prototype\\.constructor\\s?=\\s?(${this._global}\\.)?(\\w)+`, 'g' ),
-            'Library':   new RegExp( `${this._global}.(\\w+) = \\{` ),
+            'Classic':   new RegExp( `(${this._namespace}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' ),
+            'Prototype': new RegExp( `prototype\\.constructor\\s?=\\s?(${this._namespace}\\.)?(\\w)+`, 'g' ),
+            'Library':   new RegExp( `${this._namespace}.(\\w+) = \\{` ),
             'Es6':       new RegExp( /(export\s(default|var))|((import|export)[\r\n\s]*(default)?({[\w\s,]+}\s?(from)?))/, 'g' )
         }
 
@@ -165,24 +165,24 @@ class JsToEs {
         this._banner = value
     }
 
-    get global () {
-        return this._banner
+    get namespace () {
+        return this._namespace
     }
 
-    set global ( value ) {
+    set namespace ( value ) {
 
-        if ( isNotString( value ) ) { throw new TypeError( 'Invalid global argument, expect a string.' )}
+        if ( isNotString( value ) ) { throw new TypeError( 'Invalid namespace argument, expect a string.' )}
 
-        // global will be used in regex so escape it
+        // namespace will be used in regex so escape it
         // https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
-        this._global = value.replace( /[-\/\\^$*+?.()|[\]{}]/g, '\\$&' )
+        this._namespace = value.replace( /[-\/\\^$*+?.()|[\]{}]/g, '\\$&' )
         this._regex  = {
             'AMD':       new RegExp( /define\.amd/g ),
             'CJS':       new RegExp( /module\.exports\s*=\s*\{?[^}]*}?/g ),
             'UMD':       new RegExp( /\(function\s*\(root,\s*factory\)\s*\{/g ),
-            'Classic':   new RegExp( `(${this._global}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' ),
-            'Prototype': new RegExp( `prototype\\.constructor\\s?=\\s?(${this._global}\\.)?(\\w)+`, 'g' ),
-            'Library':   new RegExp( `${this._global}.(\\w+) = \\{` ),
+            'Classic':   new RegExp( `(${this._namespace}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' ),
+            'Prototype': new RegExp( `prototype\\.constructor\\s?=\\s?(${this._namespace}\\.)?(\\w)+`, 'g' ),
+            'Library':   new RegExp( `${this._namespace}.(\\w+) = \\{` ),
             'Es6':       new RegExp( /(export\s(default|var))|((import|export)[\r\n\s]*(default)?({[\w\s,]+}\s?(from)?))/, 'g' )
         }
 
@@ -420,7 +420,7 @@ class JsToEs {
 
     }
 
-    static _getAllImportsStatementIn ( global, file, exports ) {
+    static _getAllImportsStatementIn ( namespace, file, exports ) {
 
         let statements = []
 
@@ -460,20 +460,20 @@ class JsToEs {
 
     }
 
-    static _getAllExtendsStatementIn ( global, file, exports ) {
+    static _getAllExtendsStatementIn ( namespace, file, exports ) {
 
         let statements = []
 
         // By Object.assign
-        const fileRegex   = new RegExp( `Object\\.assign\\(\\s*((${global}.)?(\\w+)\\.prototype[,]*\\s*){2,}`, 'g' )
-        const globalRegex = new RegExp( `${global}\\.`, 'g' )
+        const fileRegex   = new RegExp( `Object\\.assign\\(\\s*((${namespace}.)?(\\w+)\\.prototype[,]*\\s*){2,}`, 'g' )
+        const namespaceRegex = new RegExp( `${namespace}\\.`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
         matchs.filter( makeUnique )
               .forEach( ( value ) => {
 
                   const results = value.replace( /Object\.assign\(\s+/g, '' )
-                                       .replace( globalRegex, '' )
+                                       .replace( namespaceRegex, '' )
                                        .replace( /\.prototype/g, '' )
                                        .replace( /\s+/g, '' )
                                        .split( ',' )
@@ -500,18 +500,18 @@ class JsToEs {
 
     }
 
-    static _getAllInheritStatementsIn ( global, file, exports ) {
+    static _getAllInheritStatementsIn ( namespace, file, exports ) {
 
         let statements = []
 
-        const fileRegex   = new RegExp( `Object\\.create\\(\\s+((${global}.)?(\\w+)\\.prototype[,]?\\s*)+\\)`, 'g' )
-        const globalRegex = new RegExp( `Object\\.create\\(\\s+(${global}.)?`, 'g' )
+        const fileRegex   = new RegExp( `Object\\.create\\(\\s+((${namespace}.)?(\\w+)\\.prototype[,]?\\s*)+\\)`, 'g' )
+        const namespaceRegex = new RegExp( `Object\\.create\\(\\s+(${namespace}.)?`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
         matchs.filter( makeUnique )
               .forEach( ( value ) => {
 
-                  const results = value.replace( globalRegex, '' )
+                  const results = value.replace( namespaceRegex, '' )
                                        .replace( /\.prototype/g, '' )
                                        .replace( /\)/g, '' )
                                        .replace( /\s+/g, '' )
@@ -538,18 +538,18 @@ class JsToEs {
 
     }
 
-    static _getAllNewStatementIn ( global, file, exports ) {
+    static _getAllNewStatementIn ( namespace, file, exports ) {
 
         let statements = []
 
-        const fileRegex   = new RegExp( `new\\s${global}.(\\w+)\\s?`, 'g' )
-        const globalRegex = new RegExp( `new\\s${global}\\.`, 'g' )
+        const fileRegex   = new RegExp( `new\\s${namespace}.(\\w+)\\s?`, 'g' )
+        const namespaceRegex = new RegExp( `new\\s${namespace}\\.`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
         matchs.filter( makeUnique )
               .forEach( ( value ) => {
 
-                  const result = value.replace( globalRegex, '' )
+                  const result = value.replace( namespaceRegex, '' )
                                       .replace( /\s+/g, '' )
 
                   // Check if the new statement is not about the exported object !
@@ -565,18 +565,18 @@ class JsToEs {
 
     }
 
-    static _getAllInstanceOfStatementIn ( global, file, exports ) {
+    static _getAllInstanceOfStatementIn ( namespace, file, exports ) {
 
         let statements = []
 
-        const fileRegex   = new RegExp( `instanceof\\s${global}.(\\w+)\\s?`, 'g' )
-        const globalRegex = new RegExp( `instanceof\\s${global}\\.`, 'g' )
+        const fileRegex   = new RegExp( `instanceof\\s${namespace}.(\\w+)\\s?`, 'g' )
+        const namespaceRegex = new RegExp( `instanceof\\s${namespace}\\.`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
         matchs.filter( makeUnique )
               .forEach( ( value ) => {
 
-                  const result = value.replace( globalRegex, '' )
+                  const result = value.replace( namespaceRegex, '' )
                                       .replace( /\s+/g, '' )
 
                   // Check if the new statement is not about the exported object !
@@ -592,7 +592,7 @@ class JsToEs {
 
     }
 
-    static _getImportsFor ( global, file, exports, edgeCase ) {
+    static _getImportsFor ( namespace, file, exports, edgeCase ) {
 
         if ( edgeCase.importsOverride ) {
             return edgeCase.importsOverride
@@ -600,11 +600,11 @@ class JsToEs {
 
         let imports = []
 
-        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( global, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( global, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( global, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( global, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( global, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( namespace, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( namespace, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( namespace, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( namespace, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( namespace, file, exports ) )
 
         if ( edgeCase.imports ) {
             Array.prototype.push.apply( imports, edgeCase.imports )
@@ -695,7 +695,7 @@ class JsToEs {
 
     }
 
-    static _getEs6ReplacementsFor ( global ) {
+    static _getEs6ReplacementsFor ( namespace ) {
 
         let replacements = []
 
@@ -708,7 +708,7 @@ class JsToEs {
 
     }
 
-    static _getExportsReplacementsFor ( global, exports ) {
+    static _getExportsReplacementsFor ( namespace, exports ) {
 
         let replacements = []
 
@@ -716,7 +716,7 @@ class JsToEs {
 
             const exportedObject = exports[ i ]
 
-            const regex2       = new RegExp( `${global}.${exportedObject} =`, 'g' )
+            const regex2       = new RegExp( `${namespace}.${exportedObject} =`, 'g' )
             const replacement2 = `var ${exportedObject} =`
             replacements.push( [ regex2, replacement2 ] )
 
@@ -730,7 +730,7 @@ class JsToEs {
 
     }
 
-    static _getIifeReplacementsFor ( global, file ) {
+    static _getIifeReplacementsFor ( namespace, file ) {
 
         const unspacedFile = file.replace( /\s+/g, '' )
         let replacements   = []
@@ -764,10 +764,10 @@ class JsToEs {
 
     }
 
-    static _getGlobalReplacementsFor ( global ) {
+    static _getNamespaceReplacementsFor ( namespace ) {
 
-        const regex1 = new RegExp( `${global}\\.Math\\.`, 'g' )
-        const regex2 = new RegExp( `${global}\.`, 'g' )
+        const regex1 = new RegExp( `${namespace}\\.Math\\.`, 'g' )
+        const regex2 = new RegExp( `${namespace}\.`, 'g' )
 
         return [
             [ regex1, '_Math.' ],
@@ -776,13 +776,13 @@ class JsToEs {
 
     }
 
-    static _getAutoAssignementReplacementsFor ( global ) {
+    static _getAutoAssignementReplacementsFor ( namespace ) {
 
         return [ [ /var\s?(\w+)\s?=\s?\1;/g, '' ] ]
 
     }
 
-    static _getReplacementsFor ( global, file, exports, edgeCase ) {
+    static _getReplacementsFor ( namespace, file, exports, edgeCase ) {
 
         if ( edgeCase.replacementsOverride ) {
             return edgeCase.replacementsOverride
@@ -790,11 +790,11 @@ class JsToEs {
 
         let replacements = []
 
-        Array.prototype.push.apply( replacements, JsToEs._getEs6ReplacementsFor( global ) )
-        Array.prototype.push.apply( replacements, JsToEs._getExportsReplacementsFor( global, exports ) )
-        Array.prototype.push.apply( replacements, JsToEs._getIifeReplacementsFor( global, file ) )
-        Array.prototype.push.apply( replacements, JsToEs._getGlobalReplacementsFor( global ) )
-        Array.prototype.push.apply( replacements, JsToEs._getAutoAssignementReplacementsFor( global ) )
+        Array.prototype.push.apply( replacements, JsToEs._getEs6ReplacementsFor( namespace ) )
+        Array.prototype.push.apply( replacements, JsToEs._getExportsReplacementsFor( namespace, exports ) )
+        Array.prototype.push.apply( replacements, JsToEs._getIifeReplacementsFor( namespace, file ) )
+        Array.prototype.push.apply( replacements, JsToEs._getNamespaceReplacementsFor( namespace ) )
+        Array.prototype.push.apply( replacements, JsToEs._getAutoAssignementReplacementsFor( namespace ) )
 
         if ( edgeCase.replacements ) {
             Array.prototype.push.apply( replacements, edgeCase.replacements )
@@ -817,7 +817,7 @@ class JsToEs {
 
     }
 
-    static _getExportsStatementsInES6File ( global, file ) {
+    static _getExportsStatementsInES6File ( namespace, file ) {
 
         let exportedElements = []
 
@@ -878,14 +878,14 @@ class JsToEs {
 
     }
 
-    static _getExportsStatementsInAMDFile ( global, file ) {
+    static _getExportsStatementsInAMDFile ( namespace, file ) {
 
         console.error( `WARNING: File is unable to be process... It is an AMD module. Sorry for the disagreement.` )
         return []
 
     }
 
-    static _getExportsStatementsInCJSFile ( global, file ) {
+    static _getExportsStatementsInCJSFile ( namespace, file ) {
 
         let exportedElements = []
 
@@ -911,12 +911,12 @@ class JsToEs {
 
     }
 
-    static _getExportsStatementsInClassicFile ( global, file ) {
+    static _getExportsStatementsInClassicFile ( namespace, file ) {
 
         let exportedElements = []
 
-        const fileRegex   = new RegExp( `(${global}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' )
-        const globalRegex = new RegExp( `${global}\\.|\\s*=\\s*function`, 'g' )
+        const fileRegex   = new RegExp( `(${namespace}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' )
+        const namespaceRegex = new RegExp( `${namespace}\\.|\\s*=\\s*function`, 'g' )
 
         const potentialClassicObjectExports = file.match( fileRegex )
         if ( potentialClassicObjectExports ) {
@@ -924,7 +924,7 @@ class JsToEs {
             // Clean
             potentialClassicObjectExports.forEach( ( value ) => {
 
-                const results = value.replace( globalRegex, '' )
+                const results = value.replace( namespaceRegex, '' )
                                      .replace( /\s*/g, '' )
                                      .split( '=' )
 
@@ -938,12 +938,12 @@ class JsToEs {
 
     }
 
-    static _getExportsStatementsInPrototypedFile ( global, file ) {
+    static _getExportsStatementsInPrototypedFile ( namespace, file ) {
 
         let exportedElements = []
 
-        const fileRegex   = new RegExp( `prototype\\.constructor\\s?=\\s?(${global}\\.)?(\\w)+`, 'g' )
-        const globalRegex = new RegExp( `${global}\\.`, 'g' )
+        const fileRegex   = new RegExp( `prototype\\.constructor\\s?=\\s?(${namespace}\\.)?(\\w)+`, 'g' )
+        const namespaceRegex = new RegExp( `${namespace}\\.`, 'g' )
 
         const potentialPrototypedObjectExports = file.match( fileRegex )
         if ( potentialPrototypedObjectExports ) {
@@ -952,7 +952,7 @@ class JsToEs {
             potentialPrototypedObjectExports.forEach( ( value ) => {
 
                 const result = value.replace( /prototype\.constructor\s?=\s?/g, '' )
-                                    .replace( globalRegex, '' )
+                                    .replace( namespaceRegex, '' )
 
                 exportedElements.push( result )
 
@@ -964,12 +964,12 @@ class JsToEs {
 
     }
 
-    static _getExportsStatementInLibraryFile ( global, file ) {
+    static _getExportsStatementInLibraryFile ( namespace, file ) {
 
         let exportedElements = []
 
-        const fileRegex   = new RegExp( `${global}.(\\w+) = \\{`, 'g' )
-        const globalRegex = new RegExp( `${global}\\.| = \\{`, 'g' )
+        const fileRegex   = new RegExp( `${namespace}.(\\w+) = \\{`, 'g' )
+        const namespaceRegex = new RegExp( `${namespace}\\.| = \\{`, 'g' )
 
         const potentialLibExports = file.match( fileRegex )
         if ( potentialLibExports ) {
@@ -977,7 +977,7 @@ class JsToEs {
             // Clean
             potentialLibExports.forEach( ( value ) => {
 
-                const result = value.replace( globalRegex, '' )
+                const result = value.replace( namespaceRegex, '' )
 
                 exportedElements.push( result )
 
@@ -989,7 +989,7 @@ class JsToEs {
 
     }
 
-    static _getExportsFor ( global, fileType, file, baseName, edgeCase ) {
+    static _getExportsFor ( namespace, fileType, file, baseName, edgeCase ) {
 
         if ( edgeCase.exportsOverride ) {
             return edgeCase.exportsOverride
@@ -1000,31 +1000,32 @@ class JsToEs {
         switch ( fileType ) {
 
             case JsToEs.JavascriptType.AMD:
-                exports = JsToEs._getExportsStatementsInAMDFile( global, file )
+                exports = JsToEs._getExportsStatementsInAMDFile( namespace, file )
                 break
 
             case JsToEs.JavascriptType.CJS:
-                exports = JsToEs._getExportsStatementsInCJSFile( global, file )
+                exports = JsToEs._getExportsStatementsInCJSFile( namespace, file )
                 break
 
             case JsToEs.JavascriptType.Classic:
-                exports = JsToEs._getExportsStatementsInClassicFile( global, file )
+                exports = JsToEs._getExportsStatementsInClassicFile( namespace, file )
                 break
 
             case JsToEs.JavascriptType.Es6:
-                exports = JsToEs._getExportsStatementsInES6File( global, file )
+                exports = JsToEs._getExportsStatementsInES6File( namespace, file )
                 break
 
             case JsToEs.JavascriptType.Library:
-                exports = JsToEs._getExportsStatementInLibraryFile( global, file )
+                exports = JsToEs._getExportsStatementInLibraryFile( namespace, file )
                 break
 
             case JsToEs.JavascriptType.Prototype:
-                exports = JsToEs._getExportsStatementsInPrototypedFile( global, file )
+                exports = JsToEs._getExportsStatementsInPrototypedFile( namespace, file )
                 break
 
             case JsToEs.JavascriptType.UMD:
             case JsToEs.JavascriptType.Unknown:
+                console.error( `WARNING: ${baseName} does not contains explicit or implicit export, fallback to file name as export...` )
                 exports = [ baseName ]
                 break
 
@@ -1032,11 +1033,6 @@ class JsToEs {
                 throw new RangeError( `Invalid switch parameter: ${fileType}` )
                 break
 
-        }
-
-        if ( exports.length === 0 ) {
-            console.error( `WARNING: ${baseName} does not contains explicit or implicit export, fallback to file name as export...` )
-            exports = [ baseName ]
         }
 
         if ( edgeCase.exports ) {
@@ -1145,7 +1141,7 @@ class JsToEs {
 
     }
 
-    static _createFilesMap ( global, regex, filesPaths, edgeCases, outputBasePath ) {
+    static _createFilesMap ( namespace, regex, filesPaths, edgeCases, outputBasePath ) {
 
         const filesMap = {}
 
@@ -1166,9 +1162,9 @@ class JsToEs {
             if ( isJavascript ) {
 
                 const fileType     = JsToEs._getFileType( file, regex )
-                const exports      = JsToEs._getExportsFor( global, fileType, file, baseName, edgeCase )
-                const imports      = JsToEs._getImportsFor( global, file, exports, edgeCase )
-                const replacements = JsToEs._getReplacementsFor( global, file, exports, edgeCase )
+                const exports      = JsToEs._getExportsFor( namespace, fileType, file, baseName, edgeCase )
+                const imports      = JsToEs._getImportsFor( namespace, file, exports, edgeCase )
+                const replacements = JsToEs._getReplacementsFor( namespace, file, exports, edgeCase )
                 const output       = JsToEs._getOutputFor( filePath, outputBasePath, edgeCase )
 
                 filesMap[ baseName ] = {
@@ -1199,7 +1195,7 @@ class JsToEs {
 
     }
 
-    static _createExportMap ( filesPaths, regex, edgeCases, outputBasePath ) {
+    static _createExportMap ( filesPaths, namespace, regex, edgeCases, outputBasePath ) {
 
         const exportsMap = {}
 
@@ -1210,7 +1206,7 @@ class JsToEs {
             const edgeCase      = edgeCases[ baseName ] || {}
             const file          = getUncommentedFileForPath( filePath )
             const fileType      = JsToEs._getFileType( file, regex )
-            const exports       = JsToEs._getExportsFor( global, fileType, file, baseName, edgeCase )
+            const exports       = JsToEs._getExportsFor( namespace, fileType, file, baseName, edgeCase )
             const outputPath    = JsToEs._getOutputFor( filePath, outputBasePath, edgeCase )
 
             exports.forEach( ( exportedElement ) => {
@@ -1289,8 +1285,8 @@ class JsToEs {
         return this
     }
 
-    setGlobal ( value ) {
-        this.global = value
+    setNamespace ( value ) {
+        this.namespace = value
         return this
     }
 
@@ -1301,7 +1297,7 @@ class JsToEs {
         const output    = this._output
         const edgeCases = this._edgeCases
         const banner    = this._banner
-        const global    = this._global
+        const namespace    = this._namespace
         const regex     = this._regex
 
         if ( callback ) {
@@ -1312,8 +1308,8 @@ class JsToEs {
                 const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
                 const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
 
-                this._fileMap   = JsToEs._createFilesMap( global, regex, availableFilesPaths, edgeCases, output )
-                this._exportMap = JsToEs._createExportMap( jsFiles, regex, edgeCases, output )
+                this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, output )
+                this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, output )
 
                 JsToEs._processFiles( this._fileMap, this._exportMap, banner )
 
@@ -1335,8 +1331,8 @@ class JsToEs {
                     const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
                     const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
 
-                    this._fileMap   = JsToEs._createFilesMap( global, regex, availableFilesPaths, edgeCases, output )
-                    this._exportMap = JsToEs._createExportMap( jsFiles, regex, edgeCases, output )
+                    this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, output )
+                    this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, output )
 
                     JsToEs._processFiles( this._fileMap, this._exportMap, banner )
 
