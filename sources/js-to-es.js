@@ -60,7 +60,7 @@ class JsToEs {
         this.output    = options.output || ''
         this.edgeCases = options.edgeCases || []
         this.banner    = options.banner || ''
-        this.namespace    = options.namespace || ''
+        this.namespace = options.namespace || ''
 
         // Private
         this._exportMap = {}
@@ -176,7 +176,7 @@ class JsToEs {
         // namespace will be used in regex so escape it
         // https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
         this._namespace = value.replace( /[-\/\\^$*+?.()|[\]{}]/g, '\\$&' )
-        this._regex  = {
+        this._regex     = {
             'AMD':       new RegExp( /define\.amd/g ),
             'CJS':       new RegExp( /module\.exports\s*=\s*\{?[^}]*}?/g ),
             'UMD':       new RegExp( /\(function\s*\(root,\s*factory\)\s*\{/g ),
@@ -465,7 +465,7 @@ class JsToEs {
         let statements = []
 
         // By Object.assign
-        const fileRegex   = new RegExp( `Object\\.assign\\(\\s*((${namespace}.)?(\\w+)\\.prototype[,]*\\s*){2,}`, 'g' )
+        const fileRegex      = new RegExp( `Object\\.assign\\(\\s*((${namespace}.)?(\\w+)\\.prototype[,]*\\s*){2,}`, 'g' )
         const namespaceRegex = new RegExp( `${namespace}\\.`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
@@ -504,7 +504,7 @@ class JsToEs {
 
         let statements = []
 
-        const fileRegex   = new RegExp( `Object\\.create\\(\\s+((${namespace}.)?(\\w+)\\.prototype[,]?\\s*)+\\)`, 'g' )
+        const fileRegex      = new RegExp( `Object\\.create\\(\\s+((${namespace}.)?(\\w+)\\.prototype[,]?\\s*)+\\)`, 'g' )
         const namespaceRegex = new RegExp( `Object\\.create\\(\\s+(${namespace}.)?`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
@@ -542,7 +542,7 @@ class JsToEs {
 
         let statements = []
 
-        const fileRegex   = new RegExp( `new\\s${namespace}.(\\w+)\\s?`, 'g' )
+        const fileRegex      = new RegExp( `new\\s${namespace}.(\\w+)\\s?`, 'g' )
         const namespaceRegex = new RegExp( `new\\s${namespace}\\.`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
@@ -569,7 +569,7 @@ class JsToEs {
 
         let statements = []
 
-        const fileRegex   = new RegExp( `instanceof\\s${namespace}.(\\w+)\\s?`, 'g' )
+        const fileRegex      = new RegExp( `instanceof\\s${namespace}.(\\w+)\\s?`, 'g' )
         const namespaceRegex = new RegExp( `instanceof\\s${namespace}\\.`, 'g' )
 
         const matchs = file.match( fileRegex ) || []
@@ -915,7 +915,7 @@ class JsToEs {
 
         let exportedElements = []
 
-        const fileRegex   = new RegExp( `(${namespace}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' )
+        const fileRegex      = new RegExp( `(${namespace}.(\\w+)\\s*=\\s*)+\\s*function`, 'g' )
         const namespaceRegex = new RegExp( `${namespace}\\.|\\s*=\\s*function`, 'g' )
 
         const potentialClassicObjectExports = file.match( fileRegex )
@@ -942,7 +942,7 @@ class JsToEs {
 
         let exportedElements = []
 
-        const fileRegex   = new RegExp( `prototype\\.constructor\\s?=\\s?(${namespace}\\.)?(\\w)+`, 'g' )
+        const fileRegex      = new RegExp( `prototype\\.constructor\\s?=\\s?(${namespace}\\.)?(\\w)+`, 'g' )
         const namespaceRegex = new RegExp( `${namespace}\\.`, 'g' )
 
         const potentialPrototypedObjectExports = file.match( fileRegex )
@@ -968,7 +968,7 @@ class JsToEs {
 
         let exportedElements = []
 
-        const fileRegex   = new RegExp( `${namespace}.(\\w+) = \\{`, 'g' )
+        const fileRegex      = new RegExp( `${namespace}.(\\w+) = \\{`, 'g' )
         const namespaceRegex = new RegExp( `${namespace}\\.| = \\{`, 'g' )
 
         const potentialLibExports = file.match( fileRegex )
@@ -1306,7 +1306,7 @@ class JsToEs {
         const output    = this._output
         const edgeCases = this._edgeCases
         const banner    = this._banner
-        const namespace    = this._namespace
+        const namespace = this._namespace
         const regex     = this._regex
 
         if ( callback ) {
