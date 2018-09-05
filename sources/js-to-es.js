@@ -1112,36 +1112,45 @@ class JsToEs {
 
     }
 
-    static _getOutputFor ( filePath, outputBasePath, edgeCase ) {
+    static _getOutputFor ( filePath, inputs, outputBasePath, edgeCase ) {
 
         if ( edgeCase.outputOverride ) {
             return join( outputBasePath, edgeCase.outputOverride )
         }
 
-        const specificPath = JsToEs._getSpecificPath( outputBasePath, filePath )
+        const specificPath = JsToEs._getSpecificPath( inputs, outputBasePath, filePath )
         const outputPath   = join( outputBasePath, specificPath )
         return outputPath
 
     }
 
-    static _getSpecificPath ( base, target ) {
+    static _getSpecificPath ( baseInputs, baseOutput, target ) {
 
-        const baseSplits   = base.split( sep )
         const targetSplits = target.split( sep )
 
-        let index          = 0
-        while(baseSplits[index] === targetSplits[index]) {
-            index++
-        }
-        index++
+        let indexMax = 0
 
-        const specificPath = targetSplits.slice(index).join(sep)
+        for ( let i = 0, numInputs = baseInputs.length ; i < numInputs ; i++ ) {
+            const baseinputSplits = baseInputs[ i ].split( sep )
+
+            let index = 0
+            while ( baseinputSplits[ index ] === targetSplits[ index ] ) {
+                index++
+            }
+            index++
+
+            if ( index > indexMax ) {
+                indexMax = index
+            }
+        }
+
+        const specificPath = targetSplits.slice( indexMax ).join( sep )
 
         return specificPath
 
     }
 
-    static _createFilesMap ( namespace, regex, filesPaths, edgeCases, outputBasePath ) {
+    static _createFilesMap ( namespace, regex, filesPaths, edgeCases, inputs, outputBasePath ) {
 
         const filesMap = {}
 
@@ -1165,7 +1174,7 @@ class JsToEs {
                 const exports      = JsToEs._getExportsFor( namespace, fileType, file, baseName, edgeCase )
                 const imports      = JsToEs._getImportsFor( namespace, file, exports, edgeCase )
                 const replacements = JsToEs._getReplacementsFor( namespace, file, exports, edgeCase )
-                const output       = JsToEs._getOutputFor( filePath, outputBasePath, edgeCase )
+                const output       = JsToEs._getOutputFor( filePath, inputs, outputBasePath, edgeCase )
 
                 filesMap[ baseName ] = {
                     isJavascript,
@@ -1179,7 +1188,7 @@ class JsToEs {
 
             } else {
 
-                const output = JsToEs._getOutputFor( filePath, outputBasePath, edgeCase )
+                const output = JsToEs._getOutputFor( filePath, inputs, outputBasePath, edgeCase )
 
                 filesMap[ baseName ] = {
                     isJavascript,
@@ -1195,7 +1204,7 @@ class JsToEs {
 
     }
 
-    static _createExportMap ( filesPaths, namespace, regex, edgeCases, outputBasePath ) {
+    static _createExportMap ( filesPaths, namespace, regex, edgeCases, inputs, outputBasePath ) {
 
         const exportsMap = {}
 
@@ -1207,7 +1216,7 @@ class JsToEs {
             const file          = getUncommentedFileForPath( filePath )
             const fileType      = JsToEs._getFileType( file, regex )
             const exports       = JsToEs._getExportsFor( namespace, fileType, file, baseName, edgeCase )
-            const outputPath    = JsToEs._getOutputFor( filePath, outputBasePath, edgeCase )
+            const outputPath    = JsToEs._getOutputFor( filePath, inputs, outputBasePath, edgeCase )
 
             exports.forEach( ( exportedElement ) => {
 
@@ -1308,8 +1317,8 @@ class JsToEs {
                 const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
                 const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
 
-                this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, output )
-                this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, output )
+                this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, inputs, output )
+                this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
 
                 JsToEs._processFiles( this._fileMap, this._exportMap, banner )
 
@@ -1331,8 +1340,8 @@ class JsToEs {
                     const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
                     const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
 
-                    this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, output )
-                    this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, output )
+                    this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, inputs, output )
+                    this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
 
                     JsToEs._processFiles( this._fileMap, this._exportMap, banner )
 
