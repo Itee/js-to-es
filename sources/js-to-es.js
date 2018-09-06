@@ -767,7 +767,7 @@ class JsToEs {
     static _getNamespaceReplacementsFor ( namespace ) {
 
         const regex1 = new RegExp( `${namespace}\\.Math\\.`, 'g' )
-        const regex2 = new RegExp( `${namespace}\.`, 'g' )
+        const regex2 = new RegExp( `${namespace}\\.`, 'g' )
 
         return [
             [ regex1, '_Math.' ],
