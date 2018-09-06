@@ -92,7 +92,7 @@ export function getFileForPath ( value ) {
 
 export function getUncommentedFileForPath ( value ) {
 
-    return getFileForPath( value ).replace( /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1' )
+    return getFileForPath( value ).replace( /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*(?<!(\\n\\|",))$/gm, '$1' )
 
 }
 
