@@ -420,6 +420,32 @@ class JsToEs {
 
     }
 
+    static _getAllImportsFromExportsIn ( namespace, file, exports, exportMap ) {
+
+        let statements = []
+
+        for ( let exportedElement in exportMap ) {
+
+            // Check if current exported element is not the exported element by the current file
+            if ( exports.includes( exportedElement ) ) {
+                continue
+            }
+
+            // Chcek if file doesn't contain the exportedElement
+
+            const regex =  new RegExp( `\\W(${exportedElement})\\W` )
+            if ( file.match( regex ) === null ) {
+                continue
+            }
+
+            statements.push( exportedElement )
+
+        }
+
+        return statements
+
+    }
+
     static _getAllImportsStatementIn ( namespace, file, exports ) {
 
         let statements = []
@@ -592,7 +618,7 @@ class JsToEs {
 
     }
 
-    static _getImportsFor ( namespace, file, exports, edgeCase ) {
+    static _getImportsFor ( namespace, file, exports, exportMap, edgeCase ) {
 
         if ( edgeCase.importsOverride ) {
             return edgeCase.importsOverride
@@ -600,11 +626,12 @@ class JsToEs {
 
         let imports = []
 
-        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( namespace, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllImportsFromExportsIn( namespace, file, exports, exportMap ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( namespace, file, exports ) )
 
         if ( edgeCase.imports ) {
             Array.prototype.push.apply( imports, edgeCase.imports )
@@ -1149,7 +1176,7 @@ class JsToEs {
 
     }
 
-    static _createFilesMap ( namespace, regex, filesPaths, edgeCases, inputs, outputBasePath ) {
+    static _createFilesMap ( namespace, regex, filesPaths, exportMap, edgeCases, inputs, outputBasePath ) {
 
         const filesMap = {}
 
@@ -1171,7 +1198,7 @@ class JsToEs {
 
                 const fileType     = JsToEs._getFileType( file, regex )
                 const exports      = JsToEs._getExportsFor( namespace, fileType, file, baseName, edgeCase )
-                const imports      = JsToEs._getImportsFor( namespace, file, exports, edgeCase )
+                const imports      = JsToEs._getImportsFor( namespace, file, exports, exportMap, edgeCase )
                 const replacements = JsToEs._getReplacementsFor( namespace, file, exports, edgeCase )
                 const output       = JsToEs._getOutputFor( filePath, inputs, outputBasePath, edgeCase )
 
