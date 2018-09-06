@@ -631,7 +631,7 @@ class JsToEs {
 
                 const exporterFilePath = exportMap[ objectName ]
                 if ( !exporterFilePath ) {
-                    console.error( `WARNING: Missing export statement for: ${objectName} in ${importerFilePath} this is an edge case that will probably need to be managed manually !!!` )
+                    console.error( `WARNING: Missing export of ${objectName}, required in ${importerFilePath}. This is an edge case that will probably need to be managed manually !!!` )
                     return
                 }
 
