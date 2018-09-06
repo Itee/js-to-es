@@ -1226,13 +1226,8 @@ class JsToEs {
 
                 const exportPath = exportsMap[ exportedElement ]
                 if ( exportPath ) {
-
-                    const exportName = basename( exportPath )
-                    const fileName   = basename( filePath )
-
-                    console.error( `WARNING: Element "${exportedElement}" in ${fileName} is already exported by source ${exportName}! Unable to determine which source file is the right exporter !!!` )
+                    console.error( `WARNING: Element "${exportedElement}" in ${filePath} is already exported by ${exportPath}! Unable to determine which source file is the right exporter !!!` )
                     return
-
                 }
 
                 exportsMap[ exportedElement ] = outputPath
