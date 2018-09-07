@@ -29,16 +29,6 @@ import {
     makeUnique
 } from './utils'
 
-/**
- * Extend the String prototype if contains not exist.
- * It allow to check if the string contains or not a target string
- *
- * @type {Function}
- * @param {string} target - The string to match in current string
- * @return {boolean}
- */
-String.prototype.contains = String.prototype.contains || function ( target ) { return this.indexOf( target ) > -1 }
-
 class JsToEs {
 
     static JavascriptType = Object.freeze( {
@@ -355,14 +345,14 @@ class JsToEs {
             }
 
             // In case this is a file name it must fully match
-            if ( excludePattern.contains( '.' ) ) {
+            if ( excludePattern.includes( '.' ) ) {
 
                 const fileName = path.replace( /^.*(\\|\/|\:)/, '' )
                 if ( fileName === excludePattern ) {
                     isExclude = true
                 }
 
-            } else if ( path.contains( excludePattern ) ) {
+            } else if ( path.includes( excludePattern ) ) {
                 isExclude = true
             }
 
@@ -869,7 +859,7 @@ class JsToEs {
             // Clean
             es6MatchedExports.forEach( ( value ) => {
 
-                if ( value.contains( 'from' ) ) {
+                if ( value.includes( 'from' ) ) {
 
                     const splitOnFrom = value.split( 'from' )
                     const exports     = splitOnFrom[ 0 ]
@@ -885,13 +875,13 @@ class JsToEs {
 
                 }
 
-                if ( value.contains( 'as' ) ) {
+                if ( value.includes( 'as' ) ) {
 
                     value = value.replace( /\w+\sas/g, '' )
 
                 }
 
-                if ( value.contains( 'var' ) ) {
+                if ( value.includes( 'var' ) ) {
 
                     value = value.replace( /export/g, '' )
                                  .replace( /var/g, '' )
@@ -899,7 +889,7 @@ class JsToEs {
 
                 }
 
-                if ( value.contains( 'function' ) ) {
+                if ( value.includes( 'function' ) ) {
 
                     value = value.replace( /function/g, '' )
 
