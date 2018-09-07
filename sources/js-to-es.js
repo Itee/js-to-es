@@ -743,7 +743,7 @@ class JsToEs {
 
             const exportedObject = exports[ i ]
 
-            const regex2       = new RegExp( `${namespace}.${exportedObject} =`, 'g' )
+            const regex2       = new RegExp( `${namespace}\.${exportedObject} =`, 'g' )
             const replacement2 = `var ${exportedObject} =`
             replacements.push( [ regex2, replacement2 ] )
 
