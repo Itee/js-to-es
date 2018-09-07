@@ -57,6 +57,7 @@ class JsToEs {
         // Public
         this.inputs    = options.inputs || [ '' ]
         this.excludes  = options.excludes || [ '' ]
+        this.externals = options.externals || [ '' ]
         this.output    = options.output || ''
         this.edgeCases = options.edgeCases || []
         this.banner    = options.banner || ''
@@ -112,6 +113,30 @@ class JsToEs {
         } else if ( isString( value ) ) {
 
             this._excludes = [ value ]
+
+        } else {
+
+            throw new TypeError( 'Invalid excludes arguments, expected a String or Array of String' )
+
+        }
+
+        return this
+
+    }
+
+    get externals () {
+        return this._externals
+    }
+
+    set externals ( value ) {
+
+        if ( isArrayOfString( value ) ) {
+
+            this._externals = value
+
+        } else if ( isString( value ) ) {
+
+            this._externals = [ value ]
 
         } else {
 
@@ -1297,6 +1322,11 @@ class JsToEs {
 
     setExcludes ( value ) {
         this.excludes = value
+        return this
+    }
+
+    setExternals ( value ) {
+        this.externals = value
         return this
     }
 
