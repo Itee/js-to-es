@@ -109,7 +109,7 @@ function getFileForPath(value) {
   return fs.readFileSync(value, 'utf8');
 }
 function getUncommentedFileForPath(value) {
-  return getFileForPath(value).replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
+  return getFileForPath(value).replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*(?<!(\\n\\|",|',|";|';))$/gm, '$1');
 }
 function createFoldersTree(value) {
   value.split(path.sep).reduce(function (parentDir, childDir) {
@@ -211,26 +211,9 @@ function () {
     value: function convert(callback) {
       var _this = this;
 
-      var inputs = this._inputs;
-      var excludes = this._excludes;
-      var output = this._output;
-      var edgeCases = this._edgeCases;
-      var banner = this._banner;
-      var namespace = this._namespace;
-      var regex = this._regex;
-
       if (callback) {
         try {
-          var allFilesPaths = JsToEs._getFilesPathsUnder(inputs);
-
-          var availableFilesPaths = JsToEs._excludesFilesPaths(allFilesPaths, excludes);
-
-          var jsFiles = JsToEs._filterJavascriptFiles(availableFilesPaths);
-
-          this._fileMap = JsToEs._createFilesMap(namespace, regex, availableFilesPaths, edgeCases, inputs, output);
-          this._exportMap = JsToEs._createExportMap(jsFiles, namespace, regex, edgeCases, inputs, output);
-
-          JsToEs._processFiles(this._fileMap, this._exportMap, banner);
+          _run.call(this);
 
           callback();
         } catch (error) {
@@ -239,22 +222,34 @@ function () {
       } else {
         return new Promise(function (resolve, rejects) {
           try {
-            var _allFilesPaths = JsToEs._getFilesPathsUnder(inputs);
-
-            var _availableFilesPaths = JsToEs._excludesFilesPaths(_allFilesPaths, excludes);
-
-            var _jsFiles = JsToEs._filterJavascriptFiles(_availableFilesPaths);
-
-            _this._fileMap = JsToEs._createFilesMap(namespace, regex, _availableFilesPaths, edgeCases, inputs, output);
-            _this._exportMap = JsToEs._createExportMap(_jsFiles, namespace, regex, edgeCases, inputs, output);
-
-            JsToEs._processFiles(_this._fileMap, _this._exportMap, banner);
+            _run.call(_this);
 
             resolve();
           } catch (error) {
             rejects(error);
           }
         });
+      }
+
+      function _run() {
+        var inputs = this._inputs;
+        var excludes = this._excludes;
+        var output = this._output;
+        var edgeCases = this._edgeCases;
+        var banner = this._banner;
+        var namespace = this._namespace;
+        var regex = this._regex;
+
+        var allFilesPaths = JsToEs._getFilesPathsUnder(inputs).filter(makeUnique);
+
+        var availableFilesPaths = JsToEs._excludesFilesPaths(allFilesPaths, excludes);
+
+        var jsFiles = JsToEs._filterJavascriptFiles(availableFilesPaths);
+
+        this._exportMap = JsToEs._createExportMap(jsFiles, namespace, regex, edgeCases, inputs, output);
+        this._fileMap = JsToEs._createFilesMap(namespace, regex, availableFilesPaths, this._exportMap, edgeCases, inputs, output);
+
+        JsToEs._processFiles(this._fileMap, this._exportMap, banner);
       }
     }
   }, {
@@ -567,6 +562,29 @@ function () {
       fs.writeFileSync(outputPath, file);
     }
   }, {
+    key: "_getAllImportsFromExportsIn",
+    value: function _getAllImportsFromExportsIn(namespace, file, exports, exportMap) {
+      var statements = [];
+
+      for (var exportedElement in exportMap) {
+        // Check if current exported element is not the exported element by the current file
+        if (exports.includes(exportedElement)) {
+          continue;
+        } // Chcek if file doesn't contain the exportedElement
+
+
+        var regex = new RegExp("(".concat(exportedElement, ")(?=(?:[^\"'\\]*(?:\\.|[\"'](?:[^\"'\\]*\\.)*[^\"'\\]*[\"']))*[^\"']*$)"));
+
+        if (file.match(regex) === null) {
+          continue;
+        }
+
+        statements.push(exportedElement);
+      }
+
+      return statements;
+    }
+  }, {
     key: "_getAllImportsStatementIn",
     value: function _getAllImportsStatementIn(namespace, file, exports) {
       var statements = [];
@@ -689,17 +707,17 @@ function () {
     }
   }, {
     key: "_getImportsFor",
-    value: function _getImportsFor(namespace, file, exports, edgeCase) {
+    value: function _getImportsFor(namespace, file, exports, exportMap, edgeCase) {
       if (edgeCase.importsOverride) {
         return edgeCase.importsOverride;
       }
 
       var imports = [];
-      Array.prototype.push.apply(imports, JsToEs._getAllImportsStatementIn(namespace, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllInheritStatementsIn(namespace, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllExtendsStatementIn(namespace, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllNewStatementIn(namespace, file, exports));
-      Array.prototype.push.apply(imports, JsToEs._getAllInstanceOfStatementIn(namespace, file, exports));
+      Array.prototype.push.apply(imports, JsToEs._getAllImportsFromExportsIn(namespace, file, exports, exportMap)); //        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( namespace, file, exports ) )
+      //        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( namespace, file, exports ) )
+      //        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( namespace, file, exports ) )
+      //        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( namespace, file, exports ) )
+      //        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( namespace, file, exports ) )
 
       if (edgeCase.imports) {
         Array.prototype.push.apply(imports, edgeCase.imports);
@@ -721,7 +739,7 @@ function () {
           var exporterFilePath = exportMap[objectName];
 
           if (!exporterFilePath) {
-            console.error("WARNING: Missing export statement for: ".concat(objectName, " in ").concat(importerFilePath, " this is an edge case that will probably need to be managed manually !!!"));
+            console.error("WARNING: Missing export of ".concat(objectName, ", required in ").concat(importerFilePath, ". This is an edge case that will probably need to be managed manually !!!"));
             return;
           } // Compute relative path from importer to exporter
 
@@ -828,7 +846,7 @@ function () {
     key: "_getNamespaceReplacementsFor",
     value: function _getNamespaceReplacementsFor(namespace) {
       var regex1 = new RegExp("".concat(namespace, "\\.Math\\."), 'g');
-      var regex2 = new RegExp("".concat(namespace, "."), 'g');
+      var regex2 = new RegExp("".concat(namespace, "\\."), 'g');
       return [[regex1, '_Math.'], [regex2, '']];
     }
   }, {
@@ -1122,7 +1140,7 @@ function () {
     }
   }, {
     key: "_createFilesMap",
-    value: function _createFilesMap(namespace, regex, filesPaths, edgeCases, inputs, outputBasePath) {
+    value: function _createFilesMap(namespace, regex, filesPaths, exportMap, edgeCases, inputs, outputBasePath) {
       var filesMap = {};
       filesPaths.forEach(function (filePath) {
         var fileExtension = path.extname(filePath);
@@ -1142,7 +1160,7 @@ function () {
 
           var exports = JsToEs._getExportsFor(namespace, fileType, file, baseName, edgeCase);
 
-          var imports = JsToEs._getImportsFor(namespace, file, exports, edgeCase);
+          var imports = JsToEs._getImportsFor(namespace, file, exports, exportMap, edgeCase);
 
           var replacements = JsToEs._getReplacementsFor(namespace, file, exports, edgeCase);
 
@@ -1194,9 +1212,7 @@ function () {
           var exportPath = exportsMap[exportedElement];
 
           if (exportPath) {
-            var exportName = path.basename(exportPath);
-            var fileName = path.basename(filePath);
-            console.error("WARNING: Element \"".concat(exportedElement, "\" in ").concat(fileName, " is already exported by source ").concat(exportName, "! Unable to determine which source file is the right exporter !!!"));
+            console.error("WARNING: Element \"".concat(exportedElement, "\" in ").concat(filePath, " is already exported by ").concat(exportPath, "! Unable to determine which source file is the right exporter !!!"));
             return;
           }
 
