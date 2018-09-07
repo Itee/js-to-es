@@ -120,8 +120,6 @@ class JsToEs {
 
         }
 
-        return this
-
     }
 
     get externals () {
@@ -144,8 +142,6 @@ class JsToEs {
 
         }
 
-        return this
-
     }
 
     get output () {
@@ -154,17 +150,9 @@ class JsToEs {
 
     set output ( value ) {
 
-        if ( isString( value ) ) {
+        if ( isNotString( value ) ) { throw new TypeError( 'Invalid output argument, expect a string.' )}
 
-            this._output = value
-
-        } else {
-
-            throw new TypeError( 'Invalid output arguments, expected a String' )
-
-        }
-
-        return this
+        this._output = value
 
     }
 
@@ -188,6 +176,7 @@ class JsToEs {
         if ( isNotString( value ) ) { throw new TypeError( 'Invalid banner argument, expect a string.' )}
 
         this._banner = value
+
     }
 
     get namespace () {
