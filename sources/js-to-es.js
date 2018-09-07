@@ -408,12 +408,12 @@ class JsToEs {
 
     }
 
-    static _convertFile ( banner, fileDatas, exportMap ) {
+    static _convertFile ( banner, fileDatas, exportMap, externals ) {
 
         const outputPath = fileDatas.output
         const outputDir  = dirname( outputPath )
 
-        const formatedImports = JsToEs._formatImportStatements( outputPath, exportMap, fileDatas.imports )
+        const formatedImports = JsToEs._formatImportStatements( outputPath, exportMap, externals, fileDatas.imports )
         const formatedFile    = JsToEs._formatReplacementStatements( fileDatas.file, fileDatas.replacements )
         const formatedExports = JsToEs._formatExportStatements( outputPath, fileDatas.exports )
         const outputFile      = banner + formatedImports + formatedFile + formatedExports
@@ -656,7 +656,7 @@ class JsToEs {
 
     }
 
-    static _formatImportStatements ( importerFilePath, exportMap, objectNames ) {
+    static _formatImportStatements ( importerFilePath, exportMap, externals, objectNames ) {
 
         let importStatements = []
         let importsMap       = {}
@@ -671,8 +671,8 @@ class JsToEs {
             } else {
 
                 const exporterFilePath = exportMap[ objectName ]
-                if ( !exporterFilePath ) {
-                    console.error( `WARNING: Missing export of ${objectName}, required in ${importerFilePath}. This is an edge case that will probably need to be managed manually !!!` )
+                if ( !exporterFilePath && !externals.includes( objectName ) ) {
+                    console.error( `WARNING: Missing export of ${objectName}, required in ${importerFilePath}. May be it is an eternal dependency ? This is an edge case that will probably need to be managed manually.` )
                     return
                 }
 
@@ -1281,10 +1281,11 @@ class JsToEs {
 
     }
 
-    static _processFiles () {
+    _processFiles () {
 
         const inputs              = this._inputs
         const excludes            = this._excludes
+        const externals           = this._externals
         const output              = this._output
         const edgeCases           = this._edgeCases
         const banner              = this._banner
@@ -1308,7 +1309,7 @@ class JsToEs {
 
             if ( fileData.isJavascript ) {
 
-                JsToEs._convertFile( banner, fileData, exportMap )
+                JsToEs._convertFile( banner, fileData, exportMap, externals )
 
             } else {
 
@@ -1389,7 +1390,7 @@ class JsToEs {
             } )
 
         }
-        
+
     }
 
 }
