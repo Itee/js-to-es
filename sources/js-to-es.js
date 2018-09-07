@@ -1326,7 +1326,7 @@ class JsToEs {
 
             try {
 
-                _run.call(this)
+                _run.call( this )
                 callback()
 
             } catch ( error ) {
@@ -1341,7 +1341,7 @@ class JsToEs {
 
                 try {
 
-                    _run.call(this)
+                    _run.call( this )
                     resolve()
 
                 } catch ( error ) {
@@ -1354,7 +1354,7 @@ class JsToEs {
 
         }
 
-        function _run() {
+        function _run () {
 
             const inputs    = this._inputs
             const excludes  = this._excludes
