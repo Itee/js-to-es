@@ -433,7 +433,7 @@ class JsToEs {
 
             // Chcek if file doesn't contain the exportedElement
 
-            const regex =  new RegExp( `\\W(${exportedElement})\\W` )
+            const regex = new RegExp( `(${exportedElement})(?=(?:[^"'\\]*(?:\\.|["'](?:[^"'\\]*\\.)*[^"'\\]*["']))*[^"']*$)` )
             if ( file.match( regex ) === null ) {
                 continue
             }
