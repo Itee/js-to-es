@@ -420,6 +420,32 @@ class JsToEs {
 
     }
 
+    static _getAllImportsFromExportsIn ( namespace, file, exports, exportMap ) {
+
+        let statements = []
+
+        for ( let exportedElement in exportMap ) {
+
+            // Check if current exported element is not the exported element by the current file
+            if ( exports.includes( exportedElement ) ) {
+                continue
+            }
+
+            // Chcek if file doesn't contain the exportedElement
+
+            const regex = new RegExp( `(${exportedElement})(?=(?:[^"'\\]*(?:\\.|["'](?:[^"'\\]*\\.)*[^"'\\]*["']))*[^"']*$)` )
+            if ( file.match( regex ) === null ) {
+                continue
+            }
+
+            statements.push( exportedElement )
+
+        }
+
+        return statements
+
+    }
+
     static _getAllImportsStatementIn ( namespace, file, exports ) {
 
         let statements = []
@@ -592,7 +618,7 @@ class JsToEs {
 
     }
 
-    static _getImportsFor ( namespace, file, exports, edgeCase ) {
+    static _getImportsFor ( namespace, file, exports, exportMap, edgeCase ) {
 
         if ( edgeCase.importsOverride ) {
             return edgeCase.importsOverride
@@ -600,11 +626,12 @@ class JsToEs {
 
         let imports = []
 
-        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( namespace, file, exports ) )
-        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( namespace, file, exports ) )
+        Array.prototype.push.apply( imports, JsToEs._getAllImportsFromExportsIn( namespace, file, exports, exportMap ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllImportsStatementIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllInheritStatementsIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllExtendsStatementIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllNewStatementIn( namespace, file, exports ) )
+        //        Array.prototype.push.apply( imports, JsToEs._getAllInstanceOfStatementIn( namespace, file, exports ) )
 
         if ( edgeCase.imports ) {
             Array.prototype.push.apply( imports, edgeCase.imports )
@@ -631,7 +658,7 @@ class JsToEs {
 
                 const exporterFilePath = exportMap[ objectName ]
                 if ( !exporterFilePath ) {
-                    console.error( `WARNING: Missing export statement for: ${objectName} in ${importerFilePath} this is an edge case that will probably need to be managed manually !!!` )
+                    console.error( `WARNING: Missing export of ${objectName}, required in ${importerFilePath}. This is an edge case that will probably need to be managed manually !!!` )
                     return
                 }
 
@@ -716,7 +743,7 @@ class JsToEs {
 
             const exportedObject = exports[ i ]
 
-            const regex2       = new RegExp( `${namespace}.${exportedObject} =`, 'g' )
+            const regex2       = new RegExp( `${namespace}\.${exportedObject} =`, 'g' )
             const replacement2 = `var ${exportedObject} =`
             replacements.push( [ regex2, replacement2 ] )
 
@@ -767,7 +794,7 @@ class JsToEs {
     static _getNamespaceReplacementsFor ( namespace ) {
 
         const regex1 = new RegExp( `${namespace}\\.Math\\.`, 'g' )
-        const regex2 = new RegExp( `${namespace}\.`, 'g' )
+        const regex2 = new RegExp( `${namespace}\\.`, 'g' )
 
         return [
             [ regex1, '_Math.' ],
@@ -1149,7 +1176,7 @@ class JsToEs {
 
     }
 
-    static _createFilesMap ( namespace, regex, filesPaths, edgeCases, inputs, outputBasePath ) {
+    static _createFilesMap ( namespace, regex, filesPaths, exportMap, edgeCases, inputs, outputBasePath ) {
 
         const filesMap = {}
 
@@ -1171,7 +1198,7 @@ class JsToEs {
 
                 const fileType     = JsToEs._getFileType( file, regex )
                 const exports      = JsToEs._getExportsFor( namespace, fileType, file, baseName, edgeCase )
-                const imports      = JsToEs._getImportsFor( namespace, file, exports, edgeCase )
+                const imports      = JsToEs._getImportsFor( namespace, file, exports, exportMap, edgeCase )
                 const replacements = JsToEs._getReplacementsFor( namespace, file, exports, edgeCase )
                 const output       = JsToEs._getOutputFor( filePath, inputs, outputBasePath, edgeCase )
 
@@ -1226,13 +1253,8 @@ class JsToEs {
 
                 const exportPath = exportsMap[ exportedElement ]
                 if ( exportPath ) {
-
-                    const exportName = basename( exportPath )
-                    const fileName   = basename( filePath )
-
-                    console.error( `WARNING: Element "${exportedElement}" in ${fileName} is already exported by source ${exportName}! Unable to determine which source file is the right exporter !!!` )
+                    console.error( `WARNING: Element "${exportedElement}" in ${filePath} is already exported by ${exportPath}! Unable to determine which source file is the right exporter !!!` )
                     return
-
                 }
 
                 exportsMap[ exportedElement ] = outputPath
@@ -1300,27 +1322,11 @@ class JsToEs {
 
     convert ( callback ) {
 
-        const inputs    = this._inputs
-        const excludes  = this._excludes
-        const output    = this._output
-        const edgeCases = this._edgeCases
-        const banner    = this._banner
-        const namespace = this._namespace
-        const regex     = this._regex
-
         if ( callback ) {
 
             try {
 
-                const allFilesPaths       = JsToEs._getFilesPathsUnder( inputs )
-                const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
-                const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
-
-                this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, inputs, output )
-                this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
-
-                JsToEs._processFiles( this._fileMap, this._exportMap, banner )
-
+                _run.call( this )
                 callback()
 
             } catch ( error ) {
@@ -1335,15 +1341,7 @@ class JsToEs {
 
                 try {
 
-                    const allFilesPaths       = JsToEs._getFilesPathsUnder( inputs )
-                    const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
-                    const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
-
-                    this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, edgeCases, inputs, output )
-                    this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
-
-                    JsToEs._processFiles( this._fileMap, this._exportMap, banner )
-
+                    _run.call( this )
                     resolve()
 
                 } catch ( error ) {
@@ -1353,6 +1351,27 @@ class JsToEs {
                 }
 
             } )
+
+        }
+
+        function _run () {
+
+            const inputs    = this._inputs
+            const excludes  = this._excludes
+            const output    = this._output
+            const edgeCases = this._edgeCases
+            const banner    = this._banner
+            const namespace = this._namespace
+            const regex     = this._regex
+
+            const allFilesPaths       = JsToEs._getFilesPathsUnder( inputs ).filter( makeUnique )
+            const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
+            const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
+
+            this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
+            this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, this._exportMap, edgeCases, inputs, output )
+
+            JsToEs._processFiles( this._fileMap, this._exportMap, banner )
 
         }
 
