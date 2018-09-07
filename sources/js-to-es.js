@@ -355,7 +355,7 @@ class JsToEs {
             }
 
             // In case this is a file name it must fully match
-            if ( excludePattern.indexOf( '.' ) > -1 ) {
+            if ( excludePattern.contains( '.' ) ) {
 
                 const fileName = path.replace( /^.*(\\|\/|\:)/, '' )
                 if ( fileName === excludePattern ) {
