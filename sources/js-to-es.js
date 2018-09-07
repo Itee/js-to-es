@@ -1281,7 +1281,24 @@ class JsToEs {
 
     }
 
-    static _processFiles ( fileMap, exportMap, banner ) {
+    static _processFiles () {
+
+        const inputs              = this._inputs
+        const excludes            = this._excludes
+        const output              = this._output
+        const edgeCases           = this._edgeCases
+        const banner              = this._banner
+        const namespace           = this._namespace
+        const regex               = this._regex
+        const allFilesPaths       = JsToEs._getFilesPathsUnder( inputs ).filter( makeUnique )
+        const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
+        const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
+        const exportMap           = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
+        const fileMap             = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, this._exportMap, edgeCases, inputs, output )
+
+        // Keep ref for instance to allow user post-processing
+        this._exportMap = exportMap
+        this._fileMap   = fileMap
 
         for ( let fileName in fileMap ) {
 
@@ -1345,7 +1362,7 @@ class JsToEs {
 
             try {
 
-                _run.call( this )
+                this._processFiles()
                 callback()
 
             } catch ( error ) {
@@ -1360,7 +1377,7 @@ class JsToEs {
 
                 try {
 
-                    _run.call( this )
+                    this._processFiles()
                     resolve()
 
                 } catch ( error ) {
@@ -1372,28 +1389,7 @@ class JsToEs {
             } )
 
         }
-
-        function _run () {
-
-            const inputs    = this._inputs
-            const excludes  = this._excludes
-            const output    = this._output
-            const edgeCases = this._edgeCases
-            const banner    = this._banner
-            const namespace = this._namespace
-            const regex     = this._regex
-
-            const allFilesPaths       = JsToEs._getFilesPathsUnder( inputs ).filter( makeUnique )
-            const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
-            const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
-
-            this._exportMap = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
-            this._fileMap   = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, this._exportMap, edgeCases, inputs, output )
-
-            JsToEs._processFiles( this._fileMap, this._exportMap, banner )
-
-        }
-
+        
     }
 
 }
