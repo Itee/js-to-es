@@ -666,7 +666,7 @@ class JsToEs {
 
                 const exporterFilePath = exportMap[ objectName ]
                 if ( !exporterFilePath && !externals.includes( objectName ) ) {
-                    console.error( `WARNING: Missing export of ${objectName}, required in ${importerFilePath}. May be it is an eternal dependency ? This is an edge case that will probably need to be managed manually.` )
+                    console.error( `WARNING: Missing export of ${objectName}, required in ${importerFilePath}. May be it is an external dependency ? This is an edge case that will probably need to be managed manually.` )
                     return
                 }
 
