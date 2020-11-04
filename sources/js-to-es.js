@@ -435,9 +435,13 @@ class JsToEs {
                 continue
             }
 
-            // Chcek if file doesn't contain the exportedElement
+            // Check if file doesn't contain the exportedElement
 
-            const regex = new RegExp( `(${exportedElement})(?=(?:[^"'\\]*(?:\\.|["'](?:[^"'\\]*\\.)*[^"'\\]*["']))*[^"']*$)` )
+            const regex = new RegExp( `((${namespace}\\.\\b(${exportedElement})\\b)|(?:new\\s+${exportedElement}\\s*\\()|\\b(${exportedElement})\\b\\.\\w+)(?=(?:[^"'\\]*(?:\\.|["'](?:[^"'\\]*\\.)*[^"'\\]*["']))*[^"']*$)`, 'gm' )
+            //            const regex = new RegExp( `((${namespace}\\.\\b(${exportedElement})\\b)|(?:new\\s+${exportedElement}\\s*\\()|\\b(${exportedElement})\\b\\.\\w+)`, 'gm' )
+            //            const regex = new RegExp( `^\\s*(?=\\S)(?!//)((?:new\\s+${exportedElement}\\s*\\()|\\b(${exportedElement})\\b\\.\\w+)`, 'gm' )
+            //            const regex = new RegExp( `(new\\s+${exportedElement}\\s*\\()|(\\W${exportedElement}\\.\\w+(?=\\.js))`, 'gm' )
+            //            const regex = new RegExp( `\\b(${exportedElement})\\b(?=(?:[^"'\\]*(?:\\.|["'](?:[^"'\\]*\\.)*[^"'\\]*["']))*[^"']*$)`, 'gm' )
             if ( file.match( regex ) === null ) {
                 continue
             }
