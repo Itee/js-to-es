@@ -1289,7 +1289,7 @@ class JsToEs {
         const availableFilesPaths = JsToEs._excludesFilesPaths( allFilesPaths, excludes )
         const jsFiles             = JsToEs._filterJavascriptFiles( availableFilesPaths )
         const exportMap           = JsToEs._createExportMap( jsFiles, namespace, regex, edgeCases, inputs, output )
-        const fileMap             = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, this._exportMap, edgeCases, inputs, output )
+        const fileMap             = JsToEs._createFilesMap( namespace, regex, availableFilesPaths, exportMap, edgeCases, inputs, output )
 
         // Keep ref for instance to allow user post-processing
         this._exportMap = exportMap
